@@ -1,0 +1,66 @@
+a.nav-link {
+    color: black;
+}
+
+#sidebar {
+    min-height: 300px;
+    padding: 30px 30px;
+    margin-left: 20px;
+}
+  
+#product-list {
+    background-color: #fff;
+    min-height: 300px;
+}
+
+div#product-list {
+    padding-left: 0;
+    padding-right: 30px;
+}
+  
+.product-category {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+button#dropdownMenuButton1 {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.container {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-left: 0;
+}
+
+img.card-img-top {
+    max-height: 250px;
+}
+
+ul.pagination.justify-content-center {
+    margin-top: 35px;
+}
+
+.footer-content {
+    padding: 20px;
+    overflow: hidden;
+    background-color: #f8f9fa!important
+}
+
+.footer-content img {
+    margin-right: 15px;
+    float: left;
+}
+
+.footer-content h7,
+.footer-content p{
+    margin-left: 15px;
+    display: block;
+    margin: 2px 0 0 0;
+}
+
+.checked {
+    color: orange;
+}
+

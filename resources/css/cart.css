@@ -1,0 +1,52 @@
+a.nav-link {
+    color: black;
+}
+
+.w3-container {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-top: 20px;
+    padding-bottom: 30px;
+    margin-left: 50px;
+}
+
+strong, h4, p {
+    font-size: 14px;
+}
+
+.col-12.col-sm-12.col-lg-3 {
+    text-align: -webkit-center;
+}
+
+@media only screen and (min-width: 600px){
+    strong{font-size: 16px;};
+}
+
+@media only screen and (min-width: 768px){
+    strong{font-size: 16px;};
+}
+
+.footer-content {
+    padding: 20px;
+    overflow: hidden;
+    background-color: #f8f9fa!important
+}
+
+.footer-content img {
+    margin-right: 15px;
+    float: left;
+}
+
+.footer-content h7,
+.footer-content p{
+    margin-left: 15px;
+    display: block;
+    margin: 2px 0 0 0;
+}
+
+footer {
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  box-sizing: border-box;
+}
