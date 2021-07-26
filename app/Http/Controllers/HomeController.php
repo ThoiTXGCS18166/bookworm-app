@@ -25,10 +25,16 @@ class HomeController extends Controller
         WHEN (discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
         or (discounts.discount_start_date <= now() and discounts.discount_end_date is null) THEN 1
         ELSE 0
-        end) AS state')
+        end) AS state,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
         ->whereRaw('(discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
         or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)')
-        ->orderBy('sub_price','desc')
+        ->orderBy('sub_price','desc')->orderBy('final_price','asc')
         ->limit(10)->get();
 
         $recommend_book = DB::table('books')
@@ -65,10 +71,16 @@ class HomeController extends Controller
         WHEN (discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
         or (discounts.discount_start_date <= now() and discounts.discount_end_date is null) THEN 1
         ELSE 0
-        end) AS state')
+        end) AS state, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
         ->whereRaw('(discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
         or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)')
-        ->orderBy('sub_price','desc')
+        ->orderBy('sub_price','desc')->orderBy('final_price','asc')
         ->limit(10)->get();
         
         $popular_book = DB::table('books')
@@ -89,7 +101,7 @@ class HomeController extends Controller
         ELSE 0
         end) AS state')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->orderBy('total_review','desc')->orderBy('final_price','asc')
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')
         ->limit(8)->get();
 
         return view('home_popular')->with('book_sale',$sale_book)->with('book_popular',$popular_book);

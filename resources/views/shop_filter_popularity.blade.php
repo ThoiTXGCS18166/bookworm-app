@@ -16,9 +16,9 @@
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     <li><a class="dropdown-item" href="{{URL::to('/shop')}}">Sort by on sale</a></li>
-                    <li><a class="dropdown-item" href="{{URL::to('/shop-show-high')}}">Sort by price: high to low </a>
-                    </li>
                     <li><a class="dropdown-item" href="{{URL::to('/shop-show-low')}}">Sort by price: low to high</a>
+                    </li>
+                    <li><a class="dropdown-item" href="{{URL::to('/shop-show-high')}}">Sort by price: high to low</a>
                     </li>
                 </ul>
             </div>

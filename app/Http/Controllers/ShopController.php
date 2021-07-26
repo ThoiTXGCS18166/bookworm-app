@@ -17,9 +17,24 @@ class ShopController extends Controller
         $book_amount_per_page = 25;
         $all_book = DB::table('books')
         ->join('authors','books.author_id','=','authors.id')
-        ->leftJoin('discounts','books.id','=','discounts.book_id')
+        ->join('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->orderBy('books.id','asc')->paginate(25);
+        ->selectRaw('books.book_price - discounts.discount_price AS sub_price,
+        (CASE 
+        WHEN (discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null) THEN 1
+        ELSE 0
+        end) AS state, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
+        ->whereRaw('(discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)')
+        ->orderBy('sub_price','desc')->orderBy('final_price','asc')
+        ->paginate(25);
         return view('shop')->with('category',$category_book)->with('author',$author_book)->with('all_book',$all_book)
         ->with('book_amount_per_page', $book_amount_per_page);
     }
@@ -30,9 +45,24 @@ class ShopController extends Controller
         $book_amount_per_page = 15;
         $all_book = DB::table('books')
         ->join('authors','books.author_id','=','authors.id')
-        ->leftJoin('discounts','books.id','=','discounts.book_id')
+        ->join('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->orderBy('books.id','asc')->paginate(15);
+        ->selectRaw('books.book_price - discounts.discount_price AS sub_price,
+        (CASE 
+        WHEN (discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null) THEN 1
+        ELSE 0
+        end) AS state, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
+        ->whereRaw('(discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)')
+        ->orderBy('sub_price','desc')->orderBy('final_price','asc')
+        ->paginate(15);
         return view('shop')->with('category',$category_book)->with('author',$author_book)->with('all_book',$all_book)
         ->with('book_amount_per_page', $book_amount_per_page);
     }
@@ -43,9 +73,24 @@ class ShopController extends Controller
         $book_amount_per_page = 20;
         $all_book = DB::table('books')
         ->join('authors','books.author_id','=','authors.id')
-        ->leftJoin('discounts','books.id','=','discounts.book_id')
+        ->join('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->orderBy('books.id','asc')->paginate(20);
+        ->selectRaw('books.book_price - discounts.discount_price AS sub_price,
+        (CASE 
+        WHEN (discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null) THEN 1
+        ELSE 0
+        end) AS state, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
+        ->whereRaw('(discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)')
+        ->orderBy('sub_price','desc')->orderBy('final_price','asc')
+        ->paginate(20);
         return view('shop')->with('category',$category_book)->with('author',$author_book)->with('all_book',$all_book)
         ->with('book_amount_per_page', $book_amount_per_page);
     }
@@ -56,9 +101,24 @@ class ShopController extends Controller
         $book_amount_per_page = 5;
         $all_book = DB::table('books')
         ->join('authors','books.author_id','=','authors.id')
-        ->leftJoin('discounts','books.id','=','discounts.book_id')
+        ->join('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->orderBy('books.id','asc')->paginate(5);
+        ->selectRaw('books.book_price - discounts.discount_price AS sub_price,
+        (CASE 
+        WHEN (discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null) THEN 1
+        ELSE 0
+        end) AS state, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
+        ->whereRaw('(discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)')
+        ->orderBy('sub_price','desc')->orderBy('final_price','asc')
+        ->paginate(5);
         return view('shop')->with('category',$category_book)->with('author',$author_book)->with('all_book',$all_book)
         ->with('book_amount_per_page', $book_amount_per_page);
     }
@@ -268,12 +328,25 @@ class ShopController extends Controller
         $author_book = DB::table('authors')->orderBy('author_name','asc')->limit(10)->get();
         $book_amount_per_page = 25;
 
-        $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
+        $all_book = DB::table('books')
+        ->join('authors','books.author_id','=','authors.id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->join('reviews','books.id','=','reviews.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
-        ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')->orderBy('average_rating','desc')->paginate(25);
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
+        ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
 
         return view('shop_filter_popularity')->with('category',$category_book)->with('author',$author_book)
         ->with('all_book',$all_book)->with('book_amount_per_page', $book_amount_per_page);
@@ -284,12 +357,25 @@ class ShopController extends Controller
         $author_book = DB::table('authors')->orderBy('author_name','asc')->limit(10)->get();
         $book_amount_per_page = 15;
 
-        $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
+        $all_book = DB::table('books')
+        ->join('authors','books.author_id','=','authors.id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->join('reviews','books.id','=','reviews.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
-        ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')->orderBy('average_rating','desc')->paginate(15);
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
+        ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(15);
 
         return view('shop_filter_popularity')->with('category',$category_book)->with('author',$author_book)
         ->with('all_book',$all_book)->with('book_amount_per_page', $book_amount_per_page);
@@ -300,12 +386,25 @@ class ShopController extends Controller
         $author_book = DB::table('authors')->orderBy('author_name','asc')->limit(10)->get();
         $book_amount_per_page = 20;
 
-        $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
+        $all_book = DB::table('books')
+        ->join('authors','books.author_id','=','authors.id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->join('reviews','books.id','=','reviews.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
-        ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')->orderBy('average_rating','desc')->paginate(20);
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
+        ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(20);
 
         return view('shop_filter_popularity')->with('category',$category_book)->with('author',$author_book)
         ->with('all_book',$all_book)->with('book_amount_per_page', $book_amount_per_page);
@@ -316,12 +415,25 @@ class ShopController extends Controller
         $author_book = DB::table('authors')->orderBy('author_name','asc')->limit(10)->get();
         $book_amount_per_page = 5;
 
-        $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
+        $all_book = DB::table('books')
+        ->join('authors','books.author_id','=','authors.id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->join('reviews','books.id','=','reviews.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
-        ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')->orderBy('average_rating','desc')->paginate(5);
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
+        ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(5);
 
         return view('shop_filter_popularity')->with('category',$category_book)->with('author',$author_book)
         ->with('all_book',$all_book)->with('book_amount_per_page', $book_amount_per_page);

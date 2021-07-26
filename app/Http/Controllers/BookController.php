@@ -692,7 +692,14 @@ class BookController extends Controller
         ->join('authors','books.author_id','=','authors.id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(25);
+        ->selectRaw('
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
+        ->orderBy('final_price','asc')->where('books.category_id',$category_id)->paginate(25);
 
         $filter_category = DB::table('books')->where('books.category_id',$category_id)->limit(1)->get();
 
@@ -714,16 +721,35 @@ class BookController extends Controller
             ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(25);
+            ->selectRaw('
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
+            ->orderBy('final_price','asc')->where('books.category_id',$category_id)->paginate(25);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
-            $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-            ->join('reviews','books.id','=','reviews.book_id')
+            $all_book = DB::table('books')
+            ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
+            ->join('reviews','books.id','=','reviews.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->where('books.category_id',$category_id)->orderBy('average_rating','desc')->paginate(25);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(25);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')
@@ -784,16 +810,35 @@ class BookController extends Controller
             ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(20);
+            ->selectRaw('
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
+            ->orderBy('final_price','asc')->where('books.category_id',$category_id)->paginate(20);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
-            $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-            ->join('reviews','books.id','=','reviews.book_id')
+            $all_book = DB::table('books')
+            ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
+            ->join('reviews','books.id','=','reviews.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->where('books.category_id',$category_id)->orderBy('average_rating','desc')->paginate(20);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(20);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')
@@ -854,16 +899,35 @@ class BookController extends Controller
             ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(15);
+            ->selectRaw('
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
+            ->orderBy('final_price','asc')->where('books.category_id',$category_id)->paginate(15);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
-            $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-            ->join('reviews','books.id','=','reviews.book_id')
+            $all_book = DB::table('books')
+            ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
+            ->join('reviews','books.id','=','reviews.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->where('books.category_id',$category_id)->orderBy('average_rating','desc')->paginate(15);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(15);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')
@@ -924,16 +988,35 @@ class BookController extends Controller
             ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(5);
+            ->selectRaw('
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
+            ->orderBy('final_price','asc')->where('books.category_id',$category_id)->paginate(5);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
-            $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-            ->join('reviews','books.id','=','reviews.book_id')
+            $all_book = DB::table('books')
+            ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
+            ->join('reviews','books.id','=','reviews.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->where('books.category_id',$category_id)->orderBy('average_rating','desc')->paginate(5);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(5);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')
@@ -1050,13 +1133,25 @@ class BookController extends Controller
         $author_book = DB::table('authors')->orderBy('author_name','asc')->limit(10)->get();
         $book_amount_per_page = 25;
 
-        $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-        ->join('reviews','books.id','=','reviews.book_id')
+        $all_book = DB::table('books')
+        ->join('authors','books.author_id','=','authors.id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
+        ->join('reviews','books.id','=','reviews.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->where('books.category_id',$category_id)->orderBy('average_rating','desc')->paginate(25);
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.category_id',$category_id)->paginate(25);
 
         $filter_category = DB::table('books')->where('books.category_id',$category_id)->limit(1)->get();
 
@@ -1075,7 +1170,14 @@ class BookController extends Controller
         ->join('authors','books.author_id','=','authors.id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->orderBy('books.id','asc')
+        ->selectRaw('
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
+        ->orderBy('final_price','asc')
         ->where('books.author_id',$author_id)->paginate(25);
 
         $filter_author = DB::table('books')->where('books.author_id',$author_id)->limit(1)->get();
@@ -1099,17 +1201,36 @@ class BookController extends Controller
             ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->orderBy('books.id','asc')
+            ->selectRaw('
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
+            ->orderBy('final_price','asc')
             ->where('books.author_id',$author_id)->paginate(25);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
-            $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-            ->join('reviews','books.id','=','reviews.book_id')
+            $all_book = DB::table('books')
+            ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
+            ->join('reviews','books.id','=','reviews.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->where('books.author_id',$author_id)->orderBy('average_rating','desc')->paginate(25);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.author_id',$author_id)->paginate(25);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')
@@ -1168,17 +1289,36 @@ class BookController extends Controller
             ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->orderBy('books.id','asc')
+            ->selectRaw('
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
+            ->orderBy('final_price','asc')
             ->where('books.author_id',$author_id)->paginate(20);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
-            $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-            ->join('reviews','books.id','=','reviews.book_id')
+            $all_book = DB::table('books')
+            ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
+            ->join('reviews','books.id','=','reviews.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->where('books.author_id',$author_id)->orderBy('average_rating','desc')->paginate(20);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.author_id',$author_id)->paginate(20);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')
@@ -1237,17 +1377,36 @@ class BookController extends Controller
             ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->orderBy('books.id','asc')
+            ->selectRaw('
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
+            ->orderBy('final_price','asc')
             ->where('books.author_id',$author_id)->paginate(15);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
-            $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-            ->join('reviews','books.id','=','reviews.book_id')
+            $all_book = DB::table('books')
+            ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
+            ->join('reviews','books.id','=','reviews.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->where('books.author_id',$author_id)->orderBy('average_rating','desc')->paginate(15);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.author_id',$author_id)->paginate(15);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')
@@ -1306,17 +1465,36 @@ class BookController extends Controller
             ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->orderBy('books.id','asc')
+            ->selectRaw('
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
+            ->orderBy('final_price','asc')
             ->where('books.author_id',$author_id)->paginate(5);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
-            $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-            ->join('reviews','books.id','=','reviews.book_id')
+            $all_book = DB::table('books')
+            ->join('authors','books.author_id','=','authors.id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
+            ->join('reviews','books.id','=','reviews.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->where('books.author_id',$author_id)->orderBy('average_rating','desc')->paginate(5);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.author_id',$author_id)->paginate(5);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')
@@ -1433,13 +1611,25 @@ class BookController extends Controller
         $author_book = DB::table('authors')->orderBy('author_name','asc')->limit(10)->get();
         $book_amount_per_page = 25;
 
-        $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
-        ->join('reviews','books.id','=','reviews.book_id')
+        $all_book = DB::table('books')
+        ->join('authors','books.author_id','=','authors.id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
+        ->join('reviews','books.id','=','reviews.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->where('books.author_id',$author_id)->orderBy('average_rating','desc')->paginate(25);
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->where('books.author_id',$author_id)->paginate(25);
 
         $filter_author = DB::table('books')->where('books.author_id',$author_id)->limit(1)->get();
 
@@ -1460,10 +1650,16 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-        ->orderBy('books.id','asc')->paginate(25);
+        ->orderBy('final_price','asc')->paginate(25);
 
         $sort_type = 'Sort by on sale';
         return view('shop_filter_star_1')->with('category',$category_book)->with('author',$author_book)
@@ -1481,20 +1677,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-            ->orderBy('books.id','asc')->paginate(25);
+            ->orderBy('final_price','asc')->paginate(25);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-            ->orderBy('average_rating','desc')->paginate(25);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -1554,20 +1767,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-            ->orderBy('books.id','asc')->paginate(20);
+            ->orderBy('final_price','asc')->paginate(20);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-            ->orderBy('average_rating','desc')->paginate(20);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(20);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -1627,20 +1857,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-            ->orderBy('books.id','asc')->paginate(15);
+            ->orderBy('final_price','asc')->paginate(15);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-            ->orderBy('average_rating','desc')->paginate(15);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(15);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -1700,20 +1947,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-            ->orderBy('books.id','asc')->paginate(5);
+            ->orderBy('final_price','asc')->paginate(5);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-            ->orderBy('average_rating','desc')->paginate(5);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(5);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -1771,10 +2035,21 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) >=?',[1])
-        ->orderBy('average_rating','desc')->paginate(25);
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
 
         $sort_type = 'Sort by popularity';
         return view('shop_filter_star_1')->with('category',$category_book)->with('author',$author_book)
@@ -1850,10 +2125,16 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-        ->orderBy('books.id','asc')->paginate(25);
+        ->orderBy('final_price','asc')->paginate(25);
 
         $sort_type = 'Sort by on sale';
         return view('shop_filter_star_2')->with('category',$category_book)->with('author',$author_book)
@@ -1871,20 +2152,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-            ->orderBy('books.id','asc')->paginate(25);
+            ->orderBy('final_price','asc')->paginate(25);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-            ->orderBy('average_rating','desc')->paginate(25);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -1944,20 +2242,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-            ->orderBy('books.id','asc')->paginate(20);
+            ->orderBy('final_price','asc')->paginate(20);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-            ->orderBy('average_rating','desc')->paginate(20);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(20);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2017,20 +2332,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-            ->orderBy('books.id','asc')->paginate(15);
+            ->orderBy('final_price','asc')->paginate(15);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-            ->orderBy('average_rating','desc')->paginate(15);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(15);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2090,20 +2422,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-            ->orderBy('books.id','asc')->paginate(5);
+            ->orderBy('final_price','asc')->paginate(5);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-            ->orderBy('average_rating','desc')->paginate(5);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(5);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2161,10 +2510,21 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) >=?',[2])
-        ->orderBy('average_rating','desc')->paginate(25);
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
 
         $sort_type = 'Sort by popularity';
         return view('shop_filter_star_2')->with('category',$category_book)->with('author',$author_book)
@@ -2240,10 +2600,16 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-        ->orderBy('books.id','asc')->paginate(25);
+        ->orderBy('final_price','asc')->paginate(25);
 
         $sort_type = 'Sort by on sale';
         return view('shop_filter_star_3')->with('category',$category_book)->with('author',$author_book)
@@ -2261,20 +2627,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-            ->orderBy('books.id','asc')->paginate(25);
+            ->orderBy('final_price','asc')->paginate(25);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-            ->orderBy('average_rating','desc')->paginate(25);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2334,20 +2717,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-            ->orderBy('books.id','asc')->paginate(20);
+            ->orderBy('final_price','asc')->paginate(20);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-            ->orderBy('average_rating','desc')->paginate(20);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(20);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2407,20 +2807,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-            ->orderBy('books.id','asc')->paginate(15);
+            ->orderBy('final_price','asc')->paginate(15);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-            ->orderBy('average_rating','desc')->paginate(15);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(15);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2480,20 +2897,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-            ->orderBy('books.id','asc')->paginate(5);
+            ->orderBy('final_price','asc')->paginate(5);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-            ->orderBy('average_rating','desc')->paginate(5);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(5);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2551,10 +2985,21 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) >=?',[3])
-        ->orderBy('average_rating','desc')->paginate(25);
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
 
         $sort_type = 'Sort by popularity';
         return view('shop_filter_star_3')->with('category',$category_book)->with('author',$author_book)
@@ -2630,10 +3075,16 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-        ->orderBy('books.id','asc')->paginate(25);
+        ->orderBy('final_price','asc')->paginate(25);
 
         $sort_type = 'Sort by on sale';
         return view('shop_filter_star_4')->with('category',$category_book)->with('author',$author_book)
@@ -2651,20 +3102,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-            ->orderBy('books.id','asc')->paginate(25);
+            ->orderBy('final_price','asc')->paginate(25);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-            ->orderBy('average_rating','desc')->paginate(25);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2724,20 +3192,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-            ->orderBy('books.id','asc')->paginate(20);
+            ->orderBy('final_price','asc')->paginate(20);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-            ->orderBy('average_rating','desc')->paginate(20);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(20);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2797,20 +3282,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-            ->orderBy('books.id','asc')->paginate(15);
+            ->orderBy('final_price','asc')->paginate(15);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-            ->orderBy('average_rating','desc')->paginate(15);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(15);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2870,20 +3372,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-            ->orderBy('books.id','asc')->paginate(5);
+            ->orderBy('final_price','asc')->paginate(5);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-            ->orderBy('average_rating','desc')->paginate(5);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(5);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -2941,10 +3460,21 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) >=?',[4])
-        ->orderBy('average_rating','desc')->paginate(25);
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
 
         $sort_type = 'Sort by popularity';
         return view('shop_filter_star_4')->with('category',$category_book)->with('author',$author_book)
@@ -3020,10 +3550,16 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) =?',[5])
-        ->orderBy('books.id','asc')->paginate(25);
+        ->orderBy('final_price','asc')->paginate(25);
 
         $sort_type = 'Sort by on sale';
         return view('shop_filter_star_5')->with('category',$category_book)->with('author',$author_book)
@@ -3041,20 +3577,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) =?',[5])
-            ->orderBy('books.id','asc')->paginate(25);
+            ->orderBy('final_price','asc')->paginate(25);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) =?',[5])
-            ->orderBy('average_rating','desc')->paginate(25);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -3114,20 +3667,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) =?',[5])
-            ->orderBy('books.id','asc')->paginate(20);
+            ->orderBy('final_price','asc')->paginate(20);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) =?',[5])
-            ->orderBy('average_rating','desc')->paginate(20);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(20);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -3187,20 +3757,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) =?',[5])
-            ->orderBy('books.id','asc')->paginate(15);
+            ->orderBy('final_price','asc')->paginate(15);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) =?',[5])
-            ->orderBy('average_rating','desc')->paginate(15);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(15);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -3260,20 +3847,37 @@ class BookController extends Controller
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('AVG(reviews.rating_start) AS average_rating, 
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) =?',[5])
-            ->orderBy('books.id','asc')->paginate(5);
+            ->orderBy('final_price','asc')->paginate(5);
         } elseif($sort_type_id == 2){
             $sort_type = 'Sort by popularity';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
             ->join('reviews','books.id','=','reviews.book_id')
             ->leftJoin('discounts','books.id','=','discounts.book_id')
             ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-            ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+            ->selectRaw('COUNT(reviews.book_id) AS total_review,
+            (CASE 
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN concat(discounts.discount_price)
+            ELSE concat(books.book_price)
+            end) AS final_price, (CASE
+            WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+            or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+            THEN 1
+            ELSE 0
+            end) AS state')
             ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
             ->havingRaw('AVG(reviews.rating_start) =?',[5])
-            ->orderBy('average_rating','desc')->paginate(5);
+            ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(5);
         } elseif($sort_type_id == 3){
             $sort_type = 'Sort by price: low to high';
             $all_book = DB::table('books')->join('authors','books.author_id','=','authors.id')
@@ -3331,10 +3935,21 @@ class BookController extends Controller
         ->join('reviews','books.id','=','reviews.book_id')
         ->leftJoin('discounts','books.id','=','discounts.book_id')
         ->select('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
-        ->selectRaw('AVG(reviews.rating_start) AS average_rating')
+        ->selectRaw('COUNT(reviews.book_id) AS total_review,
+        (CASE 
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN concat(discounts.discount_price)
+        ELSE concat(books.book_price)
+        end) AS final_price, (CASE
+        WHEN ((discounts.discount_start_date <= now() and discounts.discount_end_date >= now())
+        or (discounts.discount_start_date <= now() and discounts.discount_end_date is null)) 
+        THEN 1
+        ELSE 0
+        end) AS state')
         ->groupBy('books.id','books.book_title','authors.author_name','books.book_price','books.book_cover_photo','discounts.discount_start_date','discounts.discount_end_date','discounts.discount_price')
         ->havingRaw('AVG(reviews.rating_start) =?',[5])
-        ->orderBy('average_rating','desc')->paginate(25);
+        ->orderBy('total_review','desc')->orderBy('final_price','asc')->orderBy('books.id','asc')->paginate(25);
 
         $sort_type = 'Sort by popularity';
         return view('shop_filter_star_5')->with('category',$category_book)->with('author',$author_book)
