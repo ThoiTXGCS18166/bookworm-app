@@ -64,10 +64,16 @@ class CartController extends Controller
         $order['order_date'] = $request->order_date;
         $order['order_amount'] = Cart::subtotal();
 
-        DB::table('orders')->insert($order);
-
         //Insert order_details
         $content = Cart::content();
+        if($content->count() > 0){
+            DB::table('orders')->insert($order);
+        } else {
+            return '<script type="text/javascript">
+            alert("Cart is empty to place order!");
+            setTimeout(function(){ window.location.replace("/show-cart"); }, 1000);
+            </script>';
+        }
         $order_d_data = array();
         $order_id = ($last_order_item->id) + 1;
 

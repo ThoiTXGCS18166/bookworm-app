@@ -32,7 +32,7 @@
 
                 </ul>
                 <?php
-                $cart_number = Cart::count();
+                $cart_number = Cart::content()->count();
                 ?>
                 <form class="d-flex">
                     <a class="nav-link" href="{{URL::to('/home')}}">Home</a>

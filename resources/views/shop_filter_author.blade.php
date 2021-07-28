@@ -3,7 +3,7 @@
 
 @foreach($author_number as $key => $number)
 <p style="margin-top:25px;margin-left:50px;margin-bottom:25px;"><strong style="font-size:20px;">Books</strong>
-    (Filtered by Author #{{$number->id}})</p>
+    (Filtered by Author {{$number->author_name}})</p>
 <hr style="margin-left:50px;margin-right:25px;margin-bottom:0px;">
 @endforeach
 
@@ -198,7 +198,7 @@
                     ?>
                 <div class="col">
                     <div class="card h-100" style="width: 16rem;margin:auto;">
-                        <a href="{{URL::to('/book-detail/'.$book->id)}}"><img
+                        <a href="{{URL::to('/book-detail-show-new/'.$book->id)}}"><img
                                 src="{{URL::to('book/'.$book->book_cover_photo)}}" class="card-img-top" alt="..."></a>
                         <div class="card-body">
                             <strong style="font-size:14px">{{$book->book_title}}</strong>

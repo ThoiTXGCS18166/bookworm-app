@@ -185,7 +185,7 @@
                     ?>
                 <div class="col">
                     <div class="card h-100" style="width: 16rem;margin:auto;">
-                        <a href="{{URL::to('/book-detail/'.$book->id)}}"><img
+                        <a href="{{URL::to('/book-detail-show-new/'.$book->id)}}"><img
                                 src="{{URL::to('book/'.$book->book_cover_photo)}}" class="card-img-top" alt="..."></a>
                         <div class="card-body">
                             <strong style="font-size:14px">{{$book->book_title}}</strong>
